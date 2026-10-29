@@ -318,6 +318,26 @@ def test_upstream_name(
 
 
 @pytest.mark.parametrize(
+    "push_default,expected", ((None, "origin"), ("personal", "personal"))
+)
+def test_pr_remote_name(
+    push_default, expected, config, tmp_git_repo_dir, git_config, monkeypatch
+):
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    if push_default is not None:
+        git_config("--local", "remote.pushDefault", push_default)
+
+    with mock.patch("cherry_picker.cherry_picker.validate_sha", return_value=True):
+        cp = CherryPicker(
+            None,
+            "22a594a0047d7706537ff2ac676cdc0f1dcb329c",
+            ["3.6"],
+            config=config,
+        )
+    assert cp.pr_remote == expected
+
+
+@pytest.mark.parametrize(
     "remote_to_add,remote_name,upstream_remote",
     (
         (None, "upstream", None),

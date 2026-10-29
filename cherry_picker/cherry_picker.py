@@ -139,7 +139,13 @@ class CherryPicker:
         if dry_run:
             print("Dry run requested, listing expected command sequence")
 
-        self.pr_remote = pr_remote
+        cmd = "git", "config", "--get", "remote.pushDefault"
+        self.pr_remote = pr_remote or (
+            subprocess.run(
+                cmd, capture_output=True, text=True, check=False
+            ).stdout.strip()
+            or "origin"
+        )
         self.upstream_remote = upstream_remote
         self.commit_sha1 = commit_sha1
         self.branches = branches
@@ -751,8 +757,11 @@ def get_parser():
     parser.add_argument(
         "--pr-remote",
         metavar="REMOTE",
-        default="origin",
-        help="Git remote to use for PR branches",
+        default=None,
+        help=(
+            "Git remote to use for PR branches "
+            "(default: remote.pushDefault or origin)"
+        ),
     )
     parser.add_argument(
         "--upstream-remote",
