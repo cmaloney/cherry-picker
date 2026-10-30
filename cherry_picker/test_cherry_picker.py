@@ -25,6 +25,7 @@ from .cherry_picker import (
     get_commits_from_backport_branch,
     get_current_branch,
     get_full_sha_from_short,
+    get_git_config_val,
     get_sha1_from,
     get_state,
     load_config,
@@ -318,23 +319,12 @@ def test_upstream_name(
 
 
 @pytest.mark.parametrize(
-    "push_default,expected", ((None, "origin"), ("personal", "personal"))
+    "value,expected", ((None, "default"), ("", "default"), ("set", "set"))
 )
-def test_pr_remote_name(
-    push_default, expected, config, tmp_git_repo_dir, git_config, monkeypatch
-):
-    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
-    if push_default is not None:
-        git_config("--local", "remote.pushDefault", push_default)
-
-    with mock.patch("cherry_picker.cherry_picker.validate_sha", return_value=True):
-        cp = CherryPicker(
-            None,
-            "22a594a0047d7706537ff2ac676cdc0f1dcb329c",
-            ["3.6"],
-            config=config,
-        )
-    assert cp.pr_remote == expected
+def test_get_git_config_val(value, expected, tmp_git_repo_dir, git_config):
+    if value is not None:
+        git_config("--local", "cherry-picker.test-key", value)
+    assert get_git_config_val("cherry-picker.test-key", "default") == expected
 
 
 @pytest.mark.parametrize(
