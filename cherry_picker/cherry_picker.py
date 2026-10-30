@@ -139,13 +139,7 @@ class CherryPicker:
         if dry_run:
             print("Dry run requested, listing expected command sequence")
 
-        cmd = "git", "config", "--get", "remote.pushDefault"
-        self.pr_remote = pr_remote or (
-            subprocess.run(
-                cmd, capture_output=True, text=True, check=False
-            ).stdout.strip()
-            or "origin"
-        )
+        self.pr_remote = pr_remote or get_git_config_val("remote.pushDefault", "origin")
         self.upstream_remote = upstream_remote
         self.commit_sha1 = commit_sha1
         self.branches = branches
@@ -1113,6 +1107,20 @@ def load_val_from_git_cfg(cfg_key_suffix):
         )
     except subprocess.CalledProcessError:
         return None
+
+
+def get_git_config_val(key, default=None):
+    """Retrieve one option from Git config, or default if unset or empty."""
+    cmd = "git", "config", "--get", key
+    try:
+        value = (
+            subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+            .strip()
+            .decode("utf-8")
+        )
+    except subprocess.CalledProcessError:
+        value = None
+    return value or default
 
 
 def from_git_rev_read(path):
